@@ -2,7 +2,8 @@ use std::iter;
 use std::time::Instant;
 
 use egui::paint::FontDefinitions;
-use egui_winit::WinitPlatformDescriptor;
+use egui_wgpu_backend::EguiRenderPass;
+use egui_winit_platform::{WinitPlatform, WinitPlatformDescriptor};
 use futures_lite::future::block_on;
 use winit::event::Event::*;
 use winit::event_loop::ControlFlow;
@@ -59,14 +60,14 @@ fn main() {
     let mut swap_chain = device.create_swap_chain(&surface, &sc_desc);
 
     // We use the egui_winit crate as the platform.
-    let mut platform = egui_winit::WinitPlatform::new(WinitPlatformDescriptor {
+    let mut platform = WinitPlatform::new(WinitPlatformDescriptor {
         scale_factor: window.scale_factor(),
         font_definitions: FontDefinitions::with_pixels_per_point(window.scale_factor() as f32),
         style: Default::default(),
     });
 
     // We use the egui_wgpu crate as the render backend.
-    let mut egui_rpass = egui_wgpu::EguiRenderPass::new(&device, OUTPUT_FORMAT);
+    let mut egui_rpass = EguiRenderPass::new(&device, OUTPUT_FORMAT);
 
     // Display simple demo window.
     let mut demo_window = egui::demos::DemoWindow::default();
@@ -114,7 +115,7 @@ fn main() {
                     sc_desc.width,
                     sc_desc.height,
                     window.scale_factor() as f32,
-                    true,
+                    Some(wgpu::Color::BLACK),
                 );
 
                 // Submit the commands.

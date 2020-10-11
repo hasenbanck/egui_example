@@ -1,15 +1,17 @@
 [package]
-name = "egui_wgpu_winit_example"
+name = "egui_example"
 version = "0.1.0"
 authors = ["Nils Hasenbanck <nils@hasenbanck.de>"]
 edition = "2018"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
 futures-lite = "1.10"
 egui = "0.2"
-egui_wgpu = { path = "../egui_wgpu" }
-egui_winit = { path = "../egui_winit" }
+egui_wgpu_backend = { git = "https://github.com/hasenbanck/egui_wgpu_backend" }
+egui_winit_platform = { git = "https://github.com/hasenbanck/egui_winit_platform" }
 wgpu = { git = "https://github.com/gfx-rs/wgpu-rs" }
 winit = "0.23"
+
+[patch.crates-io]
+#egui_wgpu_backend = { path = "../egui_wgpu_backend" }
+#egui_winit_platform = { path = "../egui_winit_platform" }

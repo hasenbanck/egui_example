@@ -341,8 +341,21 @@ dependencies = [
 ]
 
 [[package]]
-name = "egui_wgpu"
+name = "egui_example"
 version = "0.1.0"
+dependencies = [
+ "egui",
+ "egui_wgpu_backend",
+ "egui_winit_platform",
+ "futures-lite",
+ "wgpu",
+ "winit",
+]
+
+[[package]]
+name = "egui_wgpu_backend"
+version = "0.1.0"
+source = "git+https://github.com/hasenbanck/egui_wgpu_backend#7c5af122c5ad18dff567eb9933f2aa12c21afbef"
 dependencies = [
  "bytemuck",
  "egui",
@@ -351,20 +364,9 @@ dependencies = [
 ]
 
 [[package]]
-name = "egui_wgpu_winit_example"
+name = "egui_winit_platform"
 version = "0.1.0"
-dependencies = [
- "egui",
- "egui_wgpu",
- "egui_winit",
- "futures-lite",
- "wgpu",
- "winit",
-]
-
-[[package]]
-name = "egui_winit"
-version = "0.1.0"
+source = "git+https://github.com/hasenbanck/egui_winit_platform#0038be1ab8a1226a927b5d9bbed560e592d5c9e9"
 dependencies = [
  "egui",
  "winit",
