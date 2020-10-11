@@ -7,11 +7,13 @@ edition = "2018"
 [dependencies]
 futures-lite = "1.10"
 egui = "0.2"
-egui_wgpu_backend = { git = "https://github.com/hasenbanck/egui_wgpu_backend" }
-egui_winit_platform = { git = "https://github.com/hasenbanck/egui_winit_platform" }
+egui_wgpu_backend = { version = "0.1", git = "https://github.com/hasenbanck/egui_wgpu_backend" }
+egui_winit_platform = { version = "0.1", git = "https://github.com/hasenbanck/egui_winit_platform" }
 wgpu = { git = "https://github.com/gfx-rs/wgpu-rs" }
 winit = "0.23"
 
-[patch.crates-io]
+[patch."https://github.com/hasenbanck/egui_wgpu_backend"]
 #egui_wgpu_backend = { path = "../egui_wgpu_backend" }
+
+[patch."https://github.com/hasenbanck/egui_winit_platform"]
 #egui_winit_platform = { path = "../egui_winit_platform" }
