@@ -3,8 +3,8 @@ use std::time::Instant;
 
 use chrono::Timelike;
 use egui::paint::FontDefinitions;
-use egui_wgpu_backend::{EguiRenderPass, ScreenDescriptor};
-use egui_winit_platform::{WinitPlatform, WinitPlatformDescriptor};
+use egui_wgpu_backend::{RenderPass, ScreenDescriptor};
+use egui_winit_platform::{Platform, PlatformDescriptor};
 use futures_lite::future::block_on;
 use winit::event::Event::*;
 use winit::event_loop::ControlFlow;
@@ -57,8 +57,8 @@ fn main() {
     };
     let mut swap_chain = device.create_swap_chain(&surface, &sc_desc);
 
-    // We use the egui_winit crate as the platform.
-    let mut platform = WinitPlatform::new(WinitPlatformDescriptor {
+    // We use the egui_winit_platform crate as the platform.
+    let mut platform = Platform::new(PlatformDescriptor {
         physical_width: size.width as u32,
         physical_height: size.height as u32,
         scale_factor: window.scale_factor(),
@@ -66,8 +66,8 @@ fn main() {
         style: Default::default(),
     });
 
-    // We use the egui_wgpu crate as the render backend.
-    let mut egui_rpass = EguiRenderPass::new(&device, OUTPUT_FORMAT);
+    // We use the egui_wgpu_backend crate as the render backend.
+    let mut egui_rpass = RenderPass::new(&device, OUTPUT_FORMAT);
 
     // Display the demo application that ships with egui.
     let mut demo_app = egui::demos::DemoApp::default();
@@ -75,6 +75,7 @@ fn main() {
 
     let start_time = Instant::now();
     event_loop.run(move |event, _, control_flow| {
+        // Pass the winit events to the platform integration.
         platform.handle_event(&event);
 
         match event {

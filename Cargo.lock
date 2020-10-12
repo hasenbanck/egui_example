@@ -362,18 +362,18 @@ dependencies = [
 [[package]]
 name = "egui_wgpu_backend"
 version = "0.1.0"
-source = "git+https://github.com/hasenbanck/egui_wgpu_backend#6501b59e5f3028409475e3965af3bef0d331bb98"
+source = "git+https://github.com/hasenbanck/egui_wgpu_backend#83214d2652e7529842da00c3eb39d0854177bb75"
 dependencies = [
  "bytemuck",
  "egui",
- "shaderc",
+ "vk-shader-macros",
  "wgpu",
 ]
 
 [[package]]
 name = "egui_winit_platform"
 version = "0.1.0"
-source = "git+https://github.com/hasenbanck/egui_winit_platform#25cedb1f94384728c80ef421ea72e8e9d41014e9"
+source = "git+https://github.com/hasenbanck/egui_winit_platform#47d86ab8cfb392eedf0b560fae9daf43ea397a70"
 dependencies = [
  "egui",
  "winit",
@@ -1434,6 +1434,29 @@ name = "version_check"
 version = "0.9.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b5a972e5669d67ba988ce3dc826706fb0a8b01471c088cb0b6110b805cc36aed"
+
+[[package]]
+name = "vk-shader-macros"
+version = "0.2.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0b5028e27627090b995b6e473d8391fadb4c0b69973ae5375fd5533336fdf201"
+dependencies = [
+ "proc-macro-hack",
+ "vk-shader-macros-impl",
+]
+
+[[package]]
+name = "vk-shader-macros-impl"
+version = "0.2.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1af8b2b88833e89a5b11e425b85ffff5a79425abc0a9356b49feb5a272be119d"
+dependencies = [
+ "proc-macro-hack",
+ "proc-macro2",
+ "quote",
+ "shaderc",
+ "syn",
+]
 
 [[package]]
 name = "waker-fn"
