@@ -8,9 +8,9 @@ checksum = "d9fe5e32de01730eb1f6b7f5b51c17e03e2325bf40a74f754f04f130043affff"
 
 [[package]]
 name = "ahash"
-version = "0.4.5"
+version = "0.4.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0adac150c2dd5a9c864d054e07bda5e6bc010cd10036ea5f17e82a2f5867f735"
+checksum = "f6789e291be47ace86a60303502173d84af8327e3627ecf334356ee0f87a164c"
 
 [[package]]
 name = "andrew"
@@ -349,7 +349,7 @@ dependencies = [
 [[package]]
 name = "egui_wgpu_backend"
 version = "0.1.0"
-source = "git+https://github.com/hasenbanck/egui_wgpu_backend#07dbcf0716370cb689d2f10652cfa3fa83ba324b"
+source = "git+https://github.com/hasenbanck/egui_wgpu_backend#6b7f0c05403d2df8b2c7ddfbddde725fc12bc966"
 dependencies = [
  "bytemuck",
  "egui",
@@ -360,7 +360,7 @@ dependencies = [
 [[package]]
 name = "egui_winit_platform"
 version = "0.1.0"
-source = "git+https://github.com/hasenbanck/egui_winit_platform#0038be1ab8a1226a927b5d9bbed560e592d5c9e9"
+source = "git+https://github.com/hasenbanck/egui_winit_platform#83f14fc2826b0e12547578d477c8faad607170c5"
 dependencies = [
  "egui",
  "winit",
@@ -564,9 +564,9 @@ dependencies = [
 
 [[package]]
 name = "gfx-backend-dx12"
-version = "0.6.6"
+version = "0.6.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3173338bc209dab8b83f6c02ba6ab26e31a9428993458e8d474a964b9170d639"
+checksum = "9ba32db242c8c0d459cf2c5ef9596aa2b57e50c71090f36cdda6cc637ed6e94a"
 dependencies = [
  "arrayvec",
  "bitflags",
@@ -1350,9 +1350,9 @@ dependencies = [
 
 [[package]]
 name = "toml"
-version = "0.5.6"
+version = "0.5.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ffc92d160b1eef40665be3a05630d003936a3bc7da7421277846c2613e92c71a"
+checksum = "75cf45bb0bef80604d001caaec0d09da99611b3c0fd39d3080468875cdb65645"
 dependencies = [
  "serde",
 ]
