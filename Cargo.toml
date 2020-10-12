@@ -9,7 +9,7 @@ futures-lite = "1.10"
 egui = "0.2"
 egui_wgpu_backend = { version = "0.1", git = "https://github.com/hasenbanck/egui_wgpu_backend" }
 egui_winit_platform = { version = "0.1", git = "https://github.com/hasenbanck/egui_winit_platform" }
-wgpu = { git = "https://github.com/gfx-rs/wgpu-rs" }
+wgpu = "0.6"
 winit = "0.23"
 
 [patch."https://github.com/hasenbanck/egui_wgpu_backend"]
