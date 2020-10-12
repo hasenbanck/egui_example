@@ -8,8 +8,8 @@ edition = "2018"
 chrono = "0.4"
 futures-lite = "1.10"
 egui = "0.2"
-egui_wgpu_backend = { version = "0.1", git = "https://github.com/hasenbanck/egui_wgpu_backend" }
-egui_winit_platform = { version = "0.1", git = "https://github.com/hasenbanck/egui_winit_platform" }
+egui_wgpu_backend = "0.1"
+egui_winit_platform = "0.1"
 wgpu = "0.6"
 winit = "0.23"
 
