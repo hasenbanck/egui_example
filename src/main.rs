@@ -78,7 +78,7 @@ fn main() {
 
         match event {
             RedrawRequested(..) => {
-                platform.update_time(start_time.elapsed().as_nanos());
+                platform.update_time(start_time.elapsed().as_secs_f64());
 
                 let output_frame = match swap_chain.get_current_frame() {
                     Ok(frame) => frame,
