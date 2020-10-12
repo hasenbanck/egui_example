@@ -2,7 +2,7 @@ use std::iter;
 use std::time::Instant;
 
 use egui::paint::FontDefinitions;
-use egui_wgpu_backend::EguiRenderPass;
+use egui_wgpu_backend::{EguiRenderPass, ScreenDescriptor};
 use egui_winit_platform::{WinitPlatform, WinitPlatformDescriptor};
 use futures_lite::future::block_on;
 use winit::event::Event::*;
@@ -21,8 +21,8 @@ fn main() {
         .with_transparent(false)
         .with_title("egui-wgpu_winit example")
         .with_inner_size(winit::dpi::PhysicalSize {
-            width: INITIAL_WIDTH as f64,
-            height: INITIAL_HEIGHT as f64,
+            width: INITIAL_WIDTH,
+            height: INITIAL_HEIGHT,
         })
         .build(&event_loop)
         .unwrap();
@@ -38,11 +38,8 @@ fn main() {
 
     let (mut device, mut queue) = block_on(adapter.request_device(
         &wgpu::DeviceDescriptor {
-            features: wgpu::Features::PUSH_CONSTANTS,
-            limits: wgpu::Limits {
-                max_push_constant_size: 8,
-                ..Default::default()
-            },
+            features: wgpu::Features::default(),
+            limits: wgpu::Limits::default(),
             shader_validation: true,
         },
         None,
@@ -106,17 +103,20 @@ fn main() {
                 });
 
                 // Upload all resources for the GPU.
+                let screen_descriptor = ScreenDescriptor {
+                    physical_width: sc_desc.width,
+                    physical_height: sc_desc.height,
+                    scale_factor: window.scale_factor() as f32,
+                };
                 egui_rpass.update_texture(&device, &queue, &platform.context().texture());
-                egui_rpass.update_buffers(&mut device, &mut queue, &paint_jobs);
+                egui_rpass.update_buffers(&mut device, &mut queue, &paint_jobs, &screen_descriptor);
 
                 // Record all render passes.
                 egui_rpass.execute(
                     &mut encoder,
                     &output_frame.output.view,
                     &paint_jobs,
-                    sc_desc.width,
-                    sc_desc.height,
-                    window.scale_factor() as f32,
+                    &screen_descriptor,
                     Some(wgpu::Color::BLACK),
                 );
 
