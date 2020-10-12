@@ -1,6 +1,7 @@
 use std::iter;
 use std::time::Instant;
 
+use chrono::Timelike;
 use egui::paint::FontDefinitions;
 use egui_wgpu_backend::{EguiRenderPass, ScreenDescriptor};
 use egui_winit_platform::{WinitPlatform, WinitPlatformDescriptor};
@@ -68,8 +69,9 @@ fn main() {
     // We use the egui_wgpu crate as the render backend.
     let mut egui_rpass = EguiRenderPass::new(&device, OUTPUT_FORMAT);
 
-    // Display simple demo window.
-    let mut demo_window = egui::demos::DemoWindow::default();
+    // Display the demo application that ships with egui.
+    let mut demo_app = egui::demos::DemoApp::default();
+    let mut demo_env = egui::demos::DemoEnvironment::default();
 
     let start_time = Instant::now();
     event_loop.run(move |event, _, control_flow| {
@@ -78,6 +80,7 @@ fn main() {
         match event {
             RedrawRequested(..) => {
                 platform.update_time(start_time.elapsed().as_secs_f64());
+                demo_env.seconds_since_midnight = Some(seconds_since_midnight());
 
                 let output_frame = match swap_chain.get_current_frame() {
                     Ok(frame) => frame,
@@ -88,12 +91,10 @@ fn main() {
                 };
 
                 // Begin to draw the UI frame.
-                let ui = platform.begin_frame();
+                let mut ui = platform.begin_frame();
 
-                // Draw the egui based UI.
-                egui::Window::new("Demo").scroll(true).show(ui.ctx(), |ui| {
-                    demo_window.ui(ui);
-                });
+                // Draw the demo application.
+                demo_app.ui(&mut ui, &demo_env);
 
                 // End the UI frame. We could now handle the output and draw the UI with the backend.
                 let (_output, paint_jobs) = platform.end_frame();
@@ -141,4 +142,10 @@ fn main() {
             _ => (),
         }
     });
+}
+
+/// Time of day as seconds since midnight. Used for clock in demo app.
+pub fn seconds_since_midnight() -> f64 {
+    let time = chrono::Local::now().time();
+    time.num_seconds_from_midnight() as f64 + 1e-9 * (time.nanosecond() as f64)
 }

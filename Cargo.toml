@@ -5,6 +5,7 @@ authors = ["Nils Hasenbanck <nils@hasenbanck.de>"]
 edition = "2018"
 
 [dependencies]
+chrono = "0.4"
 futures-lite = "1.10"
 egui = "0.2"
 egui_wgpu_backend = { version = "0.1", git = "https://github.com/hasenbanck/egui_wgpu_backend" }
