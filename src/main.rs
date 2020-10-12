@@ -61,6 +61,8 @@ fn main() {
 
     // We use the egui_winit crate as the platform.
     let mut platform = WinitPlatform::new(WinitPlatformDescriptor {
+        physical_width: size.width as u32,
+        physical_height: size.height as u32,
         scale_factor: window.scale_factor(),
         font_definitions: FontDefinitions::with_pixels_per_point(window.scale_factor() as f32),
         style: Default::default(),

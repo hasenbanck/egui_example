@@ -360,7 +360,7 @@ dependencies = [
 [[package]]
 name = "egui_winit_platform"
 version = "0.1.0"
-source = "git+https://github.com/hasenbanck/egui_winit_platform#a281b7aa8da5e9837875db44714c825b4b684304"
+source = "git+https://github.com/hasenbanck/egui_winit_platform#25cedb1f94384728c80ef421ea72e8e9d41014e9"
 dependencies = [
  "egui",
  "winit",
