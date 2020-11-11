@@ -2,7 +2,7 @@ use std::iter;
 use std::time::Instant;
 
 use chrono::Timelike;
-use egui::paint::FontDefinitions;
+use egui::{app::App, paint::FontDefinitions};
 use egui_wgpu_backend::{RenderPass, ScreenDescriptor};
 use egui_winit_platform::{Platform, PlatformDescriptor};
 use futures_lite::future::block_on;
@@ -21,10 +21,7 @@ fn main() {
         .with_resizable(true)
         .with_transparent(false)
         .with_title("egui-wgpu_winit example")
-        .with_inner_size(winit::dpi::PhysicalSize {
-            width: INITIAL_WIDTH,
-            height: INITIAL_HEIGHT,
-        })
+        .with_inner_size(winit::dpi::PhysicalSize { width: INITIAL_WIDTH, height: INITIAL_HEIGHT })
         .build(&event_loop)
         .unwrap();
 
@@ -74,6 +71,7 @@ fn main() {
     let mut demo_env = egui::demos::DemoEnvironment::default();
 
     let start_time = Instant::now();
+    let mut previous_frame_time = None;
     event_loop.run(move |event, _, control_flow| {
         // Pass the winit events to the platform integration.
         platform.handle_event(&event);
@@ -92,13 +90,28 @@ fn main() {
                 };
 
                 // Begin to draw the UI frame.
-                let mut ui = platform.begin_frame();
+                let egui_start = Instant::now();
+                platform.begin_frame();
+                let mut integration_context = egui::app::IntegrationContext {
+                    info: egui::app::IntegrationInfo {
+                        web_info: None,
+                        cpu_usage: previous_frame_time,
+                        seconds_since_midnight: Some(seconds_since_midnight()),
+                        native_pixels_per_point: Some(window.scale_factor() as _),
+                    },
+                    tex_allocator: None,
+                    output: Default::default(),
+                };
 
                 // Draw the demo application.
-                demo_app.ui(&mut ui, &demo_env);
+                demo_app.ui(&platform.context(), &mut integration_context);
 
                 // End the UI frame. We could now handle the output and draw the UI with the backend.
-                let (_output, paint_jobs) = platform.end_frame();
+                let (_output, paint_commands) = platform.end_frame();
+                let paint_jobs = platform.context().tesselate(paint_commands);
+
+                let frame_time = (Instant::now() - egui_start).as_secs_f64() as f32;
+                previous_frame_time = Some(frame_time);
 
                 let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
                     label: Some("encoder"),
