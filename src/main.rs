@@ -99,7 +99,7 @@ fn main() {
                         seconds_since_midnight: Some(seconds_since_midnight()),
                         native_pixels_per_point: Some(window.scale_factor() as _),
                     },
-                    tex_allocator: None,
+                    tex_allocator: Some(&mut egui_rpass),
                     output: Default::default(),
                 };
 
@@ -124,6 +124,7 @@ fn main() {
                     scale_factor: window.scale_factor() as f32,
                 };
                 egui_rpass.update_texture(&device, &queue, &platform.context().texture());
+                egui_rpass.update_user_textures(&device, &queue);
                 egui_rpass.update_buffers(&mut device, &mut queue, &paint_jobs, &screen_descriptor);
 
                 // Record all render passes.
