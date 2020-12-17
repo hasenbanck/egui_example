@@ -6,6 +6,7 @@ use egui::{app::App, paint::FontDefinitions};
 use egui_wgpu_backend::{RenderPass, ScreenDescriptor};
 use egui_winit_platform::{Platform, PlatformDescriptor};
 use futures_lite::future::block_on;
+use std::sync::Arc;
 use winit::event::Event::*;
 use winit::event_loop::ControlFlow;
 
@@ -13,9 +14,24 @@ const INITIAL_WIDTH: u32 = 1920;
 const INITIAL_HEIGHT: u32 = 1080;
 const OUTPUT_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Bgra8UnormSrgb;
 
+/// A custom event type for the winit app.
+enum Event {
+    RequestRedraw,
+}
+
+/// This is the repaint signal type that egui needs for requesting a repaint from another thread.
+/// It sends the custom RequestRedraw event to the winit event loop.
+struct ExampleRepaintSignal(winit::event_loop::EventLoopProxy<Event>);
+
+impl egui::app::RepaintSignal for ExampleRepaintSignal {
+    fn request_repaint(&self) {
+        self.0.send_event(Event::RequestRedraw).ok();
+    }
+}
+
 /// A simple egui + wgpu + winit based example.
 fn main() {
-    let event_loop = winit::event_loop::EventLoop::new();
+    let event_loop = winit::event_loop::EventLoop::with_user_event();
     let window = winit::window::WindowBuilder::new()
         .with_decorations(true)
         .with_resizable(true)
@@ -57,12 +73,16 @@ fn main() {
     };
     let mut swap_chain = device.create_swap_chain(&surface, &sc_desc);
 
+    let repaint_signal = Arc::new(ExampleRepaintSignal(event_loop.create_proxy()));
+
     // We use the egui_winit_platform crate as the platform.
     let mut platform = Platform::new(PlatformDescriptor {
         physical_width: size.width as u32,
         physical_height: size.height as u32,
         scale_factor: window.scale_factor(),
-        font_definitions: FontDefinitions::with_pixels_per_point(window.scale_factor() as f32),
+        font_definitions: FontDefinitions::default_with_pixels_per_point(
+            window.scale_factor() as f32
+        ),
         style: Default::default(),
     });
 
@@ -104,6 +124,7 @@ fn main() {
                     },
                     tex_allocator: Some(&mut egui_rpass),
                     output: Default::default(),
+                    repaint_signal: repaint_signal.clone(),
                 };
 
                 // Draw the demo application.
@@ -143,7 +164,7 @@ fn main() {
                 queue.submit(iter::once(encoder.finish()));
                 *control_flow = ControlFlow::Poll;
             }
-            MainEventsCleared => {
+            MainEventsCleared | UserEvent(Event::RequestRedraw) => {
                 window.request_redraw();
             }
             WindowEvent { event, .. } => match event {
