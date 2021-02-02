@@ -2,11 +2,11 @@ use std::iter;
 use std::time::Instant;
 
 use chrono::Timelike;
-use egui::{app::App, paint::FontDefinitions};
+use egui::FontDefinitions;
 use egui_wgpu_backend::{RenderPass, ScreenDescriptor};
 use egui_winit_platform::{Platform, PlatformDescriptor};
+use epi::*;
 use futures_lite::future::block_on;
-use std::sync::Arc;
 use winit::event::Event::*;
 use winit::event_loop::ControlFlow;
 
@@ -21,11 +21,11 @@ enum Event {
 
 /// This is the repaint signal type that egui needs for requesting a repaint from another thread.
 /// It sends the custom RequestRedraw event to the winit event loop.
-struct ExampleRepaintSignal(winit::event_loop::EventLoopProxy<Event>);
+struct ExampleRepaintSignal(std::sync::Mutex<winit::event_loop::EventLoopProxy<Event>>);
 
-impl egui::app::RepaintSignal for ExampleRepaintSignal {
+impl epi::RepaintSignal for ExampleRepaintSignal {
     fn request_repaint(&self) {
-        self.0.send_event(Event::RequestRedraw).ok();
+        self.0.lock().unwrap().send_event(Event::RequestRedraw).ok();
     }
 }
 
@@ -57,7 +57,7 @@ fn main() {
         &wgpu::DeviceDescriptor {
             features: wgpu::Features::default(),
             limits: wgpu::Limits::default(),
-            shader_validation: true,
+            label: None,
         },
         None,
     ))
@@ -65,7 +65,7 @@ fn main() {
 
     let size = window.inner_size();
     let mut sc_desc = wgpu::SwapChainDescriptor {
-        usage: wgpu::TextureUsage::OUTPUT_ATTACHMENT,
+        usage: wgpu::TextureUsage::RENDER_ATTACHMENT,
         format: OUTPUT_FORMAT,
         width: size.width as u32,
         height: size.height as u32,
@@ -73,16 +73,16 @@ fn main() {
     };
     let mut swap_chain = device.create_swap_chain(&surface, &sc_desc);
 
-    let repaint_signal = Arc::new(ExampleRepaintSignal(event_loop.create_proxy()));
+    let repaint_signal = std::sync::Arc::new(ExampleRepaintSignal(std::sync::Mutex::new(
+        event_loop.create_proxy(),
+    )));
 
     // We use the egui_winit_platform crate as the platform.
     let mut platform = Platform::new(PlatformDescriptor {
         physical_width: size.width as u32,
         physical_height: size.height as u32,
         scale_factor: window.scale_factor(),
-        font_definitions: FontDefinitions::default_with_pixels_per_point(
-            window.scale_factor() as f32
-        ),
+        font_definitions: FontDefinitions::default(),
         style: Default::default(),
     });
 
@@ -90,8 +90,7 @@ fn main() {
     let mut egui_rpass = RenderPass::new(&device, OUTPUT_FORMAT);
 
     // Display the demo application that ships with egui.
-    let mut demo_app = egui::demos::DemoApp::default();
-    let mut demo_env = egui::demos::DemoEnvironment::default();
+    let mut demo_app = egui_demo_lib::WrapApp::default();
 
     let start_time = Instant::now();
     let mut previous_frame_time = None;
@@ -102,7 +101,6 @@ fn main() {
         match event {
             RedrawRequested(..) => {
                 platform.update_time(start_time.elapsed().as_secs_f64());
-                demo_env.seconds_since_midnight = Some(seconds_since_midnight());
 
                 let output_frame = match swap_chain.get_current_frame() {
                     Ok(frame) => frame,
@@ -115,24 +113,27 @@ fn main() {
                 // Begin to draw the UI frame.
                 let egui_start = Instant::now();
                 platform.begin_frame();
-                let mut integration_context = egui::app::IntegrationContext {
-                    info: egui::app::IntegrationInfo {
+                let mut app_output = epi::backend::AppOutput::default();
+
+                let mut frame = epi::backend::FrameBuilder {
+                    info: epi::IntegrationInfo {
                         web_info: None,
                         cpu_usage: previous_frame_time,
                         seconds_since_midnight: Some(seconds_since_midnight()),
                         native_pixels_per_point: Some(window.scale_factor() as _),
                     },
                     tex_allocator: Some(&mut egui_rpass),
-                    output: Default::default(),
+                    output: &mut app_output,
                     repaint_signal: repaint_signal.clone(),
-                };
+                }
+                .build();
 
                 // Draw the demo application.
-                demo_app.ui(&platform.context(), &mut integration_context);
+                demo_app.update(&platform.context(), &mut frame);
 
                 // End the UI frame. We could now handle the output and draw the UI with the backend.
                 let (_output, paint_commands) = platform.end_frame();
-                let paint_jobs = platform.context().tesselate(paint_commands);
+                let paint_jobs = platform.context().tessellate(paint_commands);
 
                 let frame_time = (Instant::now() - egui_start).as_secs_f64() as f32;
                 previous_frame_time = Some(frame_time);
