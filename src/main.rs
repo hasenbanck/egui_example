@@ -122,7 +122,7 @@ fn main() {
                         seconds_since_midnight: Some(seconds_since_midnight()),
                         native_pixels_per_point: Some(window.scale_factor() as _),
                     },
-                    tex_allocator: Some(&mut egui_rpass),
+                    tex_allocator: &mut egui_rpass,
                     output: &mut app_output,
                     repaint_signal: repaint_signal.clone(),
                 }
