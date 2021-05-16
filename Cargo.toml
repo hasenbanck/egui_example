@@ -7,13 +7,13 @@ edition = "2018"
 [dependencies]
 chrono = "0.4"
 futures-lite = "1.11"
-egui = "0.12.0"
-epi = "0.12.0"
-egui_wgpu_backend = "0.8.0"
-egui_winit_platform = "0.7.0"
-wgpu = "0.8.1"
+egui = "0.12"
+epi = "0.12"
+egui_wgpu_backend = "0.8"
+egui_winit_platform = "0.7"
+wgpu = "0.8"
 winit = "0.24"
-egui_demo_lib = "0.12.0"
+egui_demo_lib = "0.12"
 
 [patch.crates-io]
 # egui = { version = "0.5", git = "https://github.com/emilk/egui" }
