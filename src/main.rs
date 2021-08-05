@@ -87,7 +87,7 @@ fn main() {
     });
 
     // We use the egui_wgpu_backend crate as the render backend.
-    let mut egui_rpass = RenderPass::new(&device, OUTPUT_FORMAT);
+    let mut egui_rpass = RenderPass::new(&device, OUTPUT_FORMAT, 1);
 
     // Display the demo application that ships with egui.
     let mut demo_app = egui_demo_lib::WrapApp::default();
@@ -121,6 +121,7 @@ fn main() {
                         cpu_usage: previous_frame_time,
                         seconds_since_midnight: Some(seconds_since_midnight()),
                         native_pixels_per_point: Some(window.scale_factor() as _),
+                        prefer_dark_mode: None,
                     },
                     tex_allocator: &mut egui_rpass,
                     output: &mut app_output,
