@@ -3,15 +3,16 @@ name = "egui_example"
 version = "0.1.0"
 authors = ["Nils Hasenbanck <nils@hasenbanck.de>"]
 edition = "2018"
+resolver = "2"
 
 [dependencies]
 chrono = "0.4"
 futures-lite = "1.12"
 egui = "0.13"
 epi = "0.13"
-egui_wgpu_backend = "0.10"
+egui_wgpu_backend = "0.11"
 egui_winit_platform = "0.9"
-wgpu = "0.9"
+wgpu = "0.10"
 winit = "0.25"
 egui_demo_lib = "0.13"
 
