@@ -12,7 +12,6 @@ use winit::event_loop::ControlFlow;
 
 const INITIAL_WIDTH: u32 = 1920;
 const INITIAL_HEIGHT: u32 = 1080;
-const OUTPUT_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Bgra8UnormSrgb;
 
 /// A custom event type for the winit app.
 enum Event {
@@ -64,9 +63,10 @@ fn main() {
     .unwrap();
 
     let size = window.inner_size();
+    let surface_format = surface.get_preferred_format(&adapter).unwrap();
     let mut surface_config = wgpu::SurfaceConfiguration {
         usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
-        format: OUTPUT_FORMAT,
+        format: surface_format,
         width: size.width as u32,
         height: size.height as u32,
         present_mode: wgpu::PresentMode::Mailbox,
@@ -87,7 +87,7 @@ fn main() {
     });
 
     // We use the egui_wgpu_backend crate as the render backend.
-    let mut egui_rpass = RenderPass::new(&device, OUTPUT_FORMAT, 1);
+    let mut egui_rpass = RenderPass::new(&device, surface_format, 1);
 
     // Display the demo application that ships with egui.
     let mut demo_app = egui_demo_lib::WrapApp::default();

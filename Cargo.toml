@@ -10,7 +10,7 @@ chrono = "0.4"
 futures-lite = "1.12"
 egui = "0.13"
 epi = "0.13"
-egui_wgpu_backend = "0.11"
+egui_wgpu_backend = "0.10"
 egui_winit_platform = "0.9"
 wgpu = "0.10"
 winit = "0.25"
@@ -18,5 +18,5 @@ egui_demo_lib = "0.13"
 
 [patch.crates-io]
 # egui = { version = "0.5", git = "https://github.com/emilk/egui" }
-# egui_wgpu_backend = { path = "../egui_wgpu_backend" }
+egui_wgpu_backend = { path = "../egui_wgpu_backend" }
 # egui_winit_platform = { path = "../egui_winit_platform" }
