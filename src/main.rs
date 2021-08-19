@@ -44,7 +44,7 @@ fn main() {
         .build(&event_loop)
         .unwrap();
 
-    let instance = wgpu::Instance::new(wgpu::BackendBit::PRIMARY);
+    let instance = wgpu::Instance::new(wgpu::Backends::PRIMARY);
     let surface = unsafe { instance.create_surface(&window) };
 
     let adapter = block_on(instance.request_adapter(&wgpu::RequestAdapterOptions {
@@ -64,14 +64,14 @@ fn main() {
     .unwrap();
 
     let size = window.inner_size();
-    let mut sc_desc = wgpu::SwapChainDescriptor {
-        usage: wgpu::TextureUsage::RENDER_ATTACHMENT,
+    let mut surface_config = wgpu::SurfaceConfiguration {
+        usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
         format: OUTPUT_FORMAT,
         width: size.width as u32,
         height: size.height as u32,
         present_mode: wgpu::PresentMode::Mailbox,
     };
-    let mut swap_chain = device.create_swap_chain(&surface, &sc_desc);
+    surface.configure(&device, &surface_config);
 
     let repaint_signal = std::sync::Arc::new(ExampleRepaintSignal(std::sync::Mutex::new(
         event_loop.create_proxy(),
@@ -102,13 +102,17 @@ fn main() {
             RedrawRequested(..) => {
                 platform.update_time(start_time.elapsed().as_secs_f64());
 
-                let output_frame = match swap_chain.get_current_frame() {
+                let output_frame = match surface.get_current_frame() {
                     Ok(frame) => frame,
                     Err(e) => {
                         eprintln!("Dropped frame with error: {}", e);
                         return;
                     }
                 };
+                let output_view = output_frame
+                    .output
+                    .texture
+                    .create_view(&wgpu::TextureViewDescriptor::default());
 
                 // Begin to draw the UI frame.
                 let egui_start = Instant::now();
@@ -145,8 +149,8 @@ fn main() {
 
                 // Upload all resources for the GPU.
                 let screen_descriptor = ScreenDescriptor {
-                    physical_width: sc_desc.width,
-                    physical_height: sc_desc.height,
+                    physical_width: surface_config.width,
+                    physical_height: surface_config.height,
                     scale_factor: window.scale_factor() as f32,
                 };
                 egui_rpass.update_texture(&device, &queue, &platform.context().texture());
@@ -156,11 +160,11 @@ fn main() {
                 // Record all render passes.
                 egui_rpass.execute(
                     &mut encoder,
-                    &output_frame.output.view,
+                    &output_view,
                     &paint_jobs,
                     &screen_descriptor,
                     Some(wgpu::Color::BLACK),
-                );
+                ).unwrap();
 
                 // Submit the commands.
                 queue.submit(iter::once(encoder.finish()));
@@ -171,9 +175,9 @@ fn main() {
             }
             WindowEvent { event, .. } => match event {
                 winit::event::WindowEvent::Resized(size) => {
-                    sc_desc.width = size.width;
-                    sc_desc.height = size.height;
-                    swap_chain = device.create_swap_chain(&surface, &sc_desc);
+                    surface_config.width = size.width;
+                    surface_config.height = size.height;
+                    surface.configure(&device, &surface_config);
                 }
                 winit::event::WindowEvent::CloseRequested => {
                     *control_flow = ControlFlow::Exit;
