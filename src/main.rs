@@ -137,52 +137,46 @@ fn main() {
 
                 // End the UI frame. We could now handle the output and draw the UI with the backend.
                 let (output, paint_commands) = platform.end_frame(Some(&window));
+                let paint_jobs = platform.context().tessellate(paint_commands);
 
-                // Redraw egui
-                if output.needs_repaint {
-                    let paint_jobs = platform.context().tessellate(paint_commands);
+                let frame_time = (Instant::now() - egui_start).as_secs_f64() as f32;
+                previous_frame_time = Some(frame_time);
 
-                    let frame_time = (Instant::now() - egui_start).as_secs_f64() as f32;
-                    previous_frame_time = Some(frame_time);
+                let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                    label: Some("encoder"),
+                });
 
-                    let mut encoder =
-                        device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
-                            label: Some("encoder"),
-                        });
+                // Upload all resources for the GPU.
+                let screen_descriptor = ScreenDescriptor {
+                    physical_width: surface_config.width,
+                    physical_height: surface_config.height,
+                    scale_factor: window.scale_factor() as f32,
+                };
+                egui_rpass.update_texture(&device, &queue, &platform.context().texture());
+                egui_rpass.update_user_textures(&device, &queue);
+                egui_rpass.update_buffers(&mut device, &mut queue, &paint_jobs, &screen_descriptor);
 
-                    // Upload all resources for the GPU.
-                    let screen_descriptor = ScreenDescriptor {
-                        physical_width: surface_config.width,
-                        physical_height: surface_config.height,
-                        scale_factor: window.scale_factor() as f32,
-                    };
-                    egui_rpass.update_texture(&device, &queue, &platform.context().texture());
-                    egui_rpass.update_user_textures(&device, &queue);
-                    egui_rpass.update_buffers(
-                        &mut device,
-                        &mut queue,
+                // Record all render passes.
+                egui_rpass
+                    .execute(
+                        &mut encoder,
+                        &output_view,
                         &paint_jobs,
                         &screen_descriptor,
-                    );
-
-                    // Record all render passes.
-                    egui_rpass
-                        .execute(
-                            &mut encoder,
-                            &output_view,
-                            &paint_jobs,
-                            &screen_descriptor,
-                            Some(wgpu::Color::BLACK),
-                        )
-                        .unwrap();
-
-                    // Submit the commands.
-                    queue.submit(iter::once(encoder.finish()));
-                    output_frame.present();
-                    *control_flow = ControlFlow::Poll;
+                        Some(wgpu::Color::BLACK),
+                    )
+                    .unwrap();
+				// Submit the commands.
+				queue.submit(iter::once(encoder.finish()));
+				
+				// Redraw egui
+				output_frame.present();
+                
+				if output.needs_repaint {
+				    *control_flow = ControlFlow::Poll;
                 } else {
-                    *control_flow = ControlFlow::Wait;
-                }
+					*control_flow = ControlFlow::Wait;
+				}
             }
             MainEventsCleared | UserEvent(Event::RequestRedraw) => {
                 window.request_redraw();
