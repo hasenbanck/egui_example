@@ -3,16 +3,18 @@ name = "egui_example"
 version = "0.1.0"
 authors = ["Nils Hasenbanck <nils@hasenbanck.de>"]
 edition = "2018"
+
+# WGPU requires cargo resolver v2
 resolver = "2"
 
 [dependencies]
+egui_wgpu_backend = "0.12"
 chrono = "0.4"
-futures-lite = "1.12"
+pollster = "0.2"
 egui = "0.14"
 epi = "0.14"
-egui_wgpu_backend = "0.12"
 egui_winit_platform = "0.10.0"
-wgpu = "0.10"
+wgpu = "0.11"
 winit = "0.25"
 egui_demo_lib = "0.14"
 

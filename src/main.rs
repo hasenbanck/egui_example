@@ -6,10 +6,8 @@ use egui::FontDefinitions;
 use egui_wgpu_backend::{RenderPass, ScreenDescriptor};
 use egui_winit_platform::{Platform, PlatformDescriptor};
 use epi::*;
-use futures_lite::future::block_on;
 use winit::event::Event::*;
 use winit::event_loop::ControlFlow;
-
 const INITIAL_WIDTH: u32 = 1920;
 const INITIAL_HEIGHT: u32 = 1080;
 
@@ -46,13 +44,15 @@ fn main() {
     let instance = wgpu::Instance::new(wgpu::Backends::PRIMARY);
     let surface = unsafe { instance.create_surface(&window) };
 
-    let adapter = block_on(instance.request_adapter(&wgpu::RequestAdapterOptions {
+    // WGPU 0.11+ support force fallback (if HW implementation not supported), set it to true or false (optional).
+    let adapter = pollster::block_on(instance.request_adapter(&wgpu::RequestAdapterOptions {
         power_preference: wgpu::PowerPreference::HighPerformance,
         compatible_surface: Some(&surface),
+        force_fallback_adapter: false,
     }))
     .unwrap();
 
-    let (mut device, mut queue) = block_on(adapter.request_device(
+    let (mut device, mut queue) = pollster::block_on(adapter.request_device(
         &wgpu::DeviceDescriptor {
             features: wgpu::Features::default(),
             limits: wgpu::Limits::default(),
@@ -102,7 +102,7 @@ fn main() {
             RedrawRequested(..) => {
                 platform.update_time(start_time.elapsed().as_secs_f64());
 
-                let output_frame = match surface.get_current_frame() {
+                let output_frame = match surface.get_current_texture() {
                     Ok(frame) => frame,
                     Err(e) => {
                         eprintln!("Dropped frame with error: {}", e);
@@ -110,7 +110,6 @@ fn main() {
                     }
                 };
                 let output_view = output_frame
-                    .output
                     .texture
                     .create_view(&wgpu::TextureViewDescriptor::default());
 
@@ -137,38 +136,53 @@ fn main() {
                 demo_app.update(&platform.context(), &mut frame);
 
                 // End the UI frame. We could now handle the output and draw the UI with the backend.
-                let (_output, paint_commands) = platform.end_frame(Some(&window));
-                let paint_jobs = platform.context().tessellate(paint_commands);
+                let (output, paint_commands) = platform.end_frame(Some(&window));
 
-                let frame_time = (Instant::now() - egui_start).as_secs_f64() as f32;
-                previous_frame_time = Some(frame_time);
+                // Redraw egui
+                if output.needs_repaint {
+                    let paint_jobs = platform.context().tessellate(paint_commands);
 
-                let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
-                    label: Some("encoder"),
-                });
+                    let frame_time = (Instant::now() - egui_start).as_secs_f64() as f32;
+                    previous_frame_time = Some(frame_time);
 
-                // Upload all resources for the GPU.
-                let screen_descriptor = ScreenDescriptor {
-                    physical_width: surface_config.width,
-                    physical_height: surface_config.height,
-                    scale_factor: window.scale_factor() as f32,
-                };
-                egui_rpass.update_texture(&device, &queue, &platform.context().texture());
-                egui_rpass.update_user_textures(&device, &queue);
-                egui_rpass.update_buffers(&mut device, &mut queue, &paint_jobs, &screen_descriptor);
+                    let mut encoder =
+                        device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                            label: Some("encoder"),
+                        });
 
-                // Record all render passes.
-                egui_rpass.execute(
-                    &mut encoder,
-                    &output_view,
-                    &paint_jobs,
-                    &screen_descriptor,
-                    Some(wgpu::Color::BLACK),
-                ).unwrap();
+                    // Upload all resources for the GPU.
+                    let screen_descriptor = ScreenDescriptor {
+                        physical_width: surface_config.width,
+                        physical_height: surface_config.height,
+                        scale_factor: window.scale_factor() as f32,
+                    };
+                    egui_rpass.update_texture(&device, &queue, &platform.context().texture());
+                    egui_rpass.update_user_textures(&device, &queue);
+                    egui_rpass.update_buffers(
+                        &mut device,
+                        &mut queue,
+                        &paint_jobs,
+                        &screen_descriptor,
+                    );
 
-                // Submit the commands.
-                queue.submit(iter::once(encoder.finish()));
-                *control_flow = ControlFlow::Poll;
+                    // Record all render passes.
+                    egui_rpass
+                        .execute(
+                            &mut encoder,
+                            &output_view,
+                            &paint_jobs,
+                            &screen_descriptor,
+                            Some(wgpu::Color::BLACK),
+                        )
+                        .unwrap();
+
+                    // Submit the commands.
+                    queue.submit(iter::once(encoder.finish()));
+                    output_frame.present();
+                    *control_flow = ControlFlow::Poll;
+                } else {
+                    *control_flow = ControlFlow::Wait;
+                }
             }
             MainEventsCleared | UserEvent(Event::RequestRedraw) => {
                 window.request_redraw();
