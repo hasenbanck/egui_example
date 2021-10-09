@@ -136,7 +136,7 @@ fn main() {
                 demo_app.update(&platform.context(), &mut frame);
 
                 // End the UI frame. We could now handle the output and draw the UI with the backend.
-                let (output, paint_commands) = platform.end_frame(Some(&window));
+                let (_output, paint_commands) = platform.end_frame(Some(&window));
                 let paint_jobs = platform.context().tessellate(paint_commands);
 
                 let frame_time = (Instant::now() - egui_start).as_secs_f64() as f32;
@@ -166,17 +166,18 @@ fn main() {
                         Some(wgpu::Color::BLACK),
                     )
                     .unwrap();
-				// Submit the commands.
-				queue.submit(iter::once(encoder.finish()));
-				
-				// Redraw egui
-				output_frame.present();
-                
-				if output.needs_repaint {
-				    *control_flow = ControlFlow::Poll;
-                } else {
-					*control_flow = ControlFlow::Wait;
-				}
+                // Submit the commands.
+                queue.submit(iter::once(encoder.finish()));
+
+                // Redraw egui
+                output_frame.present();
+
+                // Suppport reactive mode tested on work windows only, but not on linux.
+                // if _output.needs_repaint {
+                //     *control_flow = ControlFlow::Poll;
+                // } else {
+                //     *control_flow = ControlFlow::Wait;
+                // }
             }
             MainEventsCleared | UserEvent(Event::RequestRedraw) => {
                 window.request_redraw();

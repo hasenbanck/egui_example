@@ -8,7 +8,7 @@ edition = "2018"
 resolver = "2"
 
 [dependencies]
-egui_wgpu_backend = "0.12"
+egui_wgpu_backend = "0.13"
 chrono = "0.4"
 pollster = "0.2"
 egui = "0.14"
