@@ -172,7 +172,7 @@ fn main() {
                 // Redraw egui
                 output_frame.present();
 
-                // Suppport reactive mode tested on work windows only, but not on linux.
+                // Suppport reactive on windows only, but not on linux.
                 // if _output.needs_repaint {
                 //     *control_flow = ControlFlow::Poll;
                 // } else {
