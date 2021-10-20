@@ -154,7 +154,7 @@ fn main() {
                 };
                 egui_rpass.update_texture(&device, &queue, &platform.context().texture());
                 egui_rpass.update_user_textures(&device, &queue);
-                egui_rpass.update_buffers(&mut device, &mut queue, &paint_jobs, &screen_descriptor);
+                egui_rpass.update_buffers(&device, &queue, &paint_jobs, &screen_descriptor);
 
                 // Record all render passes.
                 egui_rpass
