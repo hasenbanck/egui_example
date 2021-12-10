@@ -52,7 +52,7 @@ fn main() {
     }))
     .unwrap();
 
-    let (mut device, mut queue) = pollster::block_on(adapter.request_device(
+    let (device, queue) = pollster::block_on(adapter.request_device(
         &wgpu::DeviceDescriptor {
             features: wgpu::Features::default(),
             limits: wgpu::Limits::default(),
@@ -69,7 +69,7 @@ fn main() {
         format: surface_format,
         width: size.width as u32,
         height: size.height as u32,
-        present_mode: wgpu::PresentMode::Mailbox,
+        present_mode: wgpu::PresentMode::Fifo,
     };
     surface.configure(&device, &surface_config);
 
@@ -104,6 +104,12 @@ fn main() {
 
                 let output_frame = match surface.get_current_texture() {
                     Ok(frame) => frame,
+                    Err(wgpu::SurfaceError::Outdated) => {
+                        // This error occurs when the app is minimized on Windows.
+                        // Silently return here to prevent spamming the console with:
+                        // "The underlying surface has changed, and therefore the swap chain must be updated"
+                        return;
+                    }
                     Err(e) => {
                         eprintln!("Dropped frame with error: {}", e);
                         return;
@@ -120,9 +126,9 @@ fn main() {
 
                 let mut frame = epi::backend::FrameBuilder {
                     info: epi::IntegrationInfo {
+                        name: "egui_example",
                         web_info: None,
                         cpu_usage: previous_frame_time,
-                        seconds_since_midnight: Some(seconds_since_midnight()),
                         native_pixels_per_point: Some(window.scale_factor() as _),
                         prefer_dark_mode: None,
                     },
@@ -184,9 +190,14 @@ fn main() {
             }
             WindowEvent { event, .. } => match event {
                 winit::event::WindowEvent::Resized(size) => {
-                    surface_config.width = size.width;
-                    surface_config.height = size.height;
-                    surface.configure(&device, &surface_config);
+                    // Resize with 0 width and height is used by winit to signal a minimize event on Windows.
+                    // See: https://github.com/rust-windowing/winit/issues/208
+                    // This solves an issue where the app would panic when minimizing on Windows.
+                    if size.width > 0 && size.height > 0 {
+                        surface_config.width = size.width;
+                        surface_config.height = size.height;
+                        surface.configure(&device, &surface_config);
+                    }
                 }
                 winit::event::WindowEvent::CloseRequested => {
                     *control_flow = ControlFlow::Exit;
