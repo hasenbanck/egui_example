@@ -20,7 +20,7 @@ enum Event {
 /// It sends the custom RequestRedraw event to the winit event loop.
 struct ExampleRepaintSignal(std::sync::Mutex<winit::event_loop::EventLoopProxy<Event>>);
 
-impl epi::RepaintSignal for ExampleRepaintSignal {
+impl epi::backend::RepaintSignal for ExampleRepaintSignal {
     fn request_repaint(&self) {
         self.0.lock().unwrap().send_event(Event::RequestRedraw).ok();
     }
@@ -122,9 +122,9 @@ fn main() {
                 // Begin to draw the UI frame.
                 let egui_start = Instant::now();
                 platform.begin_frame();
-                let mut app_output = epi::backend::AppOutput::default();
+                let app_output = epi::backend::AppOutput::default();
 
-                let mut frame = epi::backend::FrameBuilder {
+                let mut frame =  epi::Frame::new(epi::backend::FrameData {
                     info: epi::IntegrationInfo {
                         name: "egui_example",
                         web_info: None,
@@ -132,11 +132,9 @@ fn main() {
                         native_pixels_per_point: Some(window.scale_factor() as _),
                         prefer_dark_mode: None,
                     },
-                    tex_allocator: &mut egui_rpass,
-                    output: &mut app_output,
+                    output: app_output,
                     repaint_signal: repaint_signal.clone(),
-                }
-                .build();
+                });
 
                 // Draw the demo application.
                 demo_app.update(&platform.context(), &mut frame);
@@ -158,7 +156,7 @@ fn main() {
                     physical_height: surface_config.height,
                     scale_factor: window.scale_factor() as f32,
                 };
-                egui_rpass.update_texture(&device, &queue, &platform.context().texture());
+                egui_rpass.update_texture(&device, &queue, &platform.context().font_image());
                 egui_rpass.update_user_textures(&device, &queue);
                 egui_rpass.update_buffers(&device, &queue, &paint_jobs, &screen_descriptor);
 
