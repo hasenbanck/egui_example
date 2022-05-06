@@ -75,7 +75,7 @@ fn main() {
         event_loop.create_proxy(),
     )));
 
-    // We use the egui_winit_platform crate as the platform.
+    // We use the `egui-winit` crate to handle integration with wgpu, and create the runtime context
     let mut state = egui_winit::State::new(4096, &window);
     let context = egui::Context::default();
 
@@ -87,7 +87,6 @@ fn main() {
 
     let mut previous_frame_time = None;
     event_loop.run(move |event, _, control_flow| {
-
         match event {
             RedrawRequested(..) => {
                 let output_frame = match surface.get_current_texture() {
@@ -113,7 +112,7 @@ fn main() {
                 context.begin_frame(input);
                 let app_output = epi::backend::AppOutput::default();
 
-                let frame =  epi::Frame::new(epi::backend::FrameData {
+                let frame = epi::Frame::new(epi::backend::FrameData {
                     info: epi::IntegrationInfo {
                         name: "egui_example",
                         web_info: None,
@@ -146,7 +145,9 @@ fn main() {
                     scale_factor: window.scale_factor() as f32,
                 };
 
-                egui_rpass.add_textures(&device, &queue, &output.textures_delta).unwrap();
+                egui_rpass
+                    .add_textures(&device, &queue, &output.textures_delta)
+                    .unwrap();
                 egui_rpass.remove_textures(output.textures_delta).unwrap();
                 egui_rpass.update_buffers(&device, &queue, &paint_jobs, &screen_descriptor);
 
@@ -176,25 +177,29 @@ fn main() {
             MainEventsCleared | UserEvent(Event::RequestRedraw) => {
                 window.request_redraw();
             }
-            WindowEvent { event, .. } => match event {
-                winit::event::WindowEvent::Resized(size) => {
-                    // Resize with 0 width and height is used by winit to signal a minimize event on Windows.
-                    // See: https://github.com/rust-windowing/winit/issues/208
-                    // This solves an issue where the app would panic when minimizing on Windows.
-                    if size.width > 0 && size.height > 0 {
-                        surface_config.width = size.width;
-                        surface_config.height = size.height;
-                        surface.configure(&device, &surface_config);
+            WindowEvent { event, .. } => {
+                // Pass the winit events to the platform integration.
+                let exclusive = state.on_event(&context, &event);
+                // state.on_event returns true when the event has already been handled by egui and shouldn't be passed further
+                if !exclusive {
+                    match event {
+                        winit::event::WindowEvent::Resized(size) => {
+                            // Resize with 0 width and height is used by winit to signal a minimize event on Windows.
+                            // See: https://github.com/rust-windowing/winit/issues/208
+                            // This solves an issue where the app would panic when minimizing on Windows.
+                            if size.width > 0 && size.height > 0 {
+                                surface_config.width = size.width;
+                                surface_config.height = size.height;
+                                surface.configure(&device, &surface_config);
+                            }
+                        }
+                        winit::event::WindowEvent::CloseRequested => {
+                            *control_flow = ControlFlow::Exit;
+                        }
+                        _ => (),
                     }
                 }
-                winit::event::WindowEvent::CloseRequested => {
-                    *control_flow = ControlFlow::Exit;
-                }
-                event => {
-                    // Pass the winit events to the platform integration.
-                    state.on_event(&context, &event);
-                }
-            },
+            }
             _ => (),
         }
     });
