@@ -1,11 +1,10 @@
 use std::iter;
 use std::time::Instant;
 
+use ::egui::FontDefinitions;
 use chrono::Timelike;
-use egui::FontDefinitions;
 use egui_wgpu_backend::{RenderPass, ScreenDescriptor};
 use egui_winit_platform::{Platform, PlatformDescriptor};
-use epi::*;
 use winit::event::Event::*;
 use winit::event_loop::ControlFlow;
 const INITIAL_WIDTH: u32 = 1920;
@@ -63,7 +62,7 @@ fn main() {
     .unwrap();
 
     let size = window.inner_size();
-    let surface_format = surface.get_preferred_format(&adapter).unwrap();
+    let surface_format = surface.get_supported_formats(&adapter)[0];
     let mut surface_config = wgpu::SurfaceConfiguration {
         usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
         format: surface_format,
@@ -72,10 +71,6 @@ fn main() {
         present_mode: wgpu::PresentMode::Fifo,
     };
     surface.configure(&device, &surface_config);
-
-    let repaint_signal = std::sync::Arc::new(ExampleRepaintSignal(std::sync::Mutex::new(
-        event_loop.create_proxy(),
-    )));
 
     // We use the egui_winit_platform crate as the platform.
     let mut platform = Platform::new(PlatformDescriptor {
@@ -90,10 +85,9 @@ fn main() {
     let mut egui_rpass = RenderPass::new(&device, surface_format, 1);
 
     // Display the demo application that ships with egui.
-    let mut demo_app = egui_demo_lib::WrapApp::default();
+    let mut demo_app = egui_demo_lib::DemoWindows::default();
 
     let start_time = Instant::now();
-    let mut previous_frame_time = None;
     event_loop.run(move |event, _, control_flow| {
         // Pass the winit events to the platform integration.
         platform.handle_event(&event);
@@ -120,31 +114,14 @@ fn main() {
                     .create_view(&wgpu::TextureViewDescriptor::default());
 
                 // Begin to draw the UI frame.
-                let egui_start = Instant::now();
                 platform.begin_frame();
-                let app_output = epi::backend::AppOutput::default();
-
-                let mut frame =  epi::Frame::new(epi::backend::FrameData {
-                    info: epi::IntegrationInfo {
-                        name: "egui_example",
-                        web_info: None,
-                        cpu_usage: previous_frame_time,
-                        native_pixels_per_point: Some(window.scale_factor() as _),
-                        prefer_dark_mode: None,
-                    },
-                    output: app_output,
-                    repaint_signal: repaint_signal.clone(),
-                });
 
                 // Draw the demo application.
-                demo_app.update(&platform.context(), &mut frame);
+                demo_app.ui(&platform.context());
 
                 // End the UI frame. We could now handle the output and draw the UI with the backend.
-                let (_output, paint_commands) = platform.end_frame(Some(&window));
-                let paint_jobs = platform.context().tessellate(paint_commands);
-
-                let frame_time = (Instant::now() - egui_start).as_secs_f64() as f32;
-                previous_frame_time = Some(frame_time);
+                let full_output = platform.end_frame(Some(&window));
+                let paint_jobs = platform.context().tessellate(full_output.shapes);
 
                 let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
                     label: Some("encoder"),
@@ -156,8 +133,10 @@ fn main() {
                     physical_height: surface_config.height,
                     scale_factor: window.scale_factor() as f32,
                 };
-                egui_rpass.update_texture(&device, &queue, &platform.context().font_image());
-                egui_rpass.update_user_textures(&device, &queue);
+                let tdelta: egui::TexturesDelta = full_output.textures_delta;
+                egui_rpass
+                    .add_textures(&device, &queue, &tdelta)
+                    .expect("add texture ok");
                 egui_rpass.update_buffers(&device, &queue, &paint_jobs, &screen_descriptor);
 
                 // Record all render passes.
@@ -175,6 +154,10 @@ fn main() {
 
                 // Redraw egui
                 output_frame.present();
+
+                egui_rpass
+                    .remove_textures(tdelta)
+                    .expect("remove texture ok");
 
                 // Suppport reactive on windows only, but not on linux.
                 // if _output.needs_repaint {
