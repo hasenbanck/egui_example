@@ -2,23 +2,20 @@
 name = "egui_example"
 version = "0.1.0"
 authors = ["Nils Hasenbanck <nils@hasenbanck.de>"]
-edition = "2018"
-
-# WGPU requires cargo resolver v2
-resolver = "2"
+edition = "2021"
 
 [dependencies]
-egui_wgpu_backend = "0.16"
+egui_wgpu_backend = "0.18"
 chrono = "0.4"
 pollster = "0.2"
-egui = "0.16"
-epi = "0.16"
-egui_winit_platform = "0.13"
-wgpu = "0.12"
+egui = "0.18"
+epi = "0.17"
+egui_winit_platform = "0.15"
+wgpu = "0.13"
 winit = "0.26"
-egui_demo_lib = "0.16"
+egui_demo_lib = "0.18"
 
-[patch.crates-io]
+#[patch.crates-io]
 # egui = { version = "0.5", git = "https://github.com/emilk/egui" }
 # egui_wgpu_backend = { path = "../egui_wgpu_backend" }
 # egui_winit_platform = { path = "../egui_winit_platform" }
