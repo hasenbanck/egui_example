@@ -159,7 +159,7 @@ fn main() {
                     .remove_textures(tdelta)
                     .expect("remove texture ok");
 
-                // Suppport reactive on windows only, but not on linux.
+                // Support reactive on windows only, but not on linux.
                 // if _output.needs_repaint {
                 //     *control_flow = ControlFlow::Poll;
                 // } else {
